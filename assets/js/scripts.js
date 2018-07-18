@@ -1,27 +1,88 @@
 (function ($) {
-    // Off canvas menu
-    $(function ($) {
-        var transformer = $('.js-content'),
-            menuToggle = $('.js-menu-toggle'),
-            menuClose = $('.js-menu__close');
-
-        menuToggle.on('click', function (event) {
-            event.preventDefault();
-            transformer.toggleClass('is-open');
+    // Dropdown menu
+    $(function () {
+        $('.js-navbar__toggle').on('click', function () {
+            $('.js-navbar').toggleClass('is-opened');
+            $('.js-navbar__toggle').attr('aria-expanded', $('.js-navbar').hasClass('is-opened'));
+            return false;
         });
 
-        menuClose.on('click', function (event) {
-            event.preventDefault();
-            menuToggle.trigger('click');
+        $('.js-navbar a').each(function (i, link) {
+            link = $(link);
+
+            link.on('click', function (e) {
+                if (
+                    link.parent().hasClass('has-submenu') &&
+                    $('.js-navbar__toggle').attr('aria-expanded') === 'true' &&
+                    link.parent().attr('aria-expanded') !== 'true'
+                ) {
+                    e.preventDefault();
+                    link.parent().attr('aria-expanded', 'true');
+                }
+            });
         });
     });
 
-    // Sticky top bar
+    // iOS :hover fix
+    document.addEventListener("touchend", function () {});
+
+    // Mainmenu improvements
     $(function ($) {
-        var menu = $('.is-sticky');
-        if (!menu.length) {
-            return;
+        var mainmenu = $('.navbar__menu');
+        var level0 = mainmenu.children('li');
+
+        var setSubmenusPosition = function (submenus) {
+            if (!submenus.length) {
+                return;
+            }
+
+            submenus.each(function (i, submenu) {
+                submenu = $(submenu);
+
+                submenu.parent().on('mouseenter', function () {
+                    setTimeout(function () {
+                        var diff = $(window).outerWidth() - (submenu.offset().left + submenu.outerWidth());
+
+                        if (diff < 0) {
+                            submenu.addClass('navbar__submenu--reversed');
+                        }
+                    }, 50);
+                });
+            });
+
+            submenus.children('li').children('.navbar__submenu').each(function (i, submenus) {
+                setSubmenusPosition($(submenus));
+            });
+        };
+
+        if (level0.length) {
+            var level1 = level0.children('.navbar__submenu');
+
+            if (level1.length) {
+                level1.each(function (i, submenu) {
+                    submenu = $(submenu);
+
+                    submenu.parent().on('mouseenter', function () {
+                        setTimeout(function () {
+                            var diff = $(window).outerWidth() - (submenu.offset().left + submenu.outerWidth());
+
+                            if (diff < 0) {
+                                submenu.css('margin-left', (diff - 10) + "px");
+                            }
+                        }, 50);
+                    });
+
+                    submenu.children('li').children('.navbar__submenu').each(function (i, submenus) {
+                        setSubmenusPosition($(submenus));
+                    });
+                });
+            }
         }
+    });
+
+    // Sticky menu animation
+    $(function ($) {
+        var menu = $('.js-top');
 
         var previousScroll = $(window).scrollTop();
         var menuHeight = menu.outerHeight();
@@ -32,17 +93,34 @@
             var diff = currentScroll - previousScroll;
             menuTop -= diff / 2;
 
-            if (menuTop < -menuHeight) {
-                menuTop = -menuHeight;
+            if (currentScroll <= 0) {
+                menuTop = 0 - currentScroll;
+            } else {
+                if (menuTop < -menuHeight) {
+                    menuTop = -menuHeight;
+                }
+
+                if (menuTop >= 0) {
+                    menuTop = 0;
+                    menu.addClass('is-sticky-on');
+
+                }
             }
 
-            if (menuTop > 0) {
-                menuTop = 0;
+            if (currentScroll <= 0) {
+                menu.removeClass('is-sticky-off');
+                menu.removeClass('is-sticky-on');
+
+            } else {
+                menu.addClass('is-sticky-off');
+
             }
 
-            menu.css('top', menuTop + 'px');
             previousScroll = currentScroll;
         });
+
+        $(window).trigger('scroll');
+
     });
 
     // Share buttons pop-up
